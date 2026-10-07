@@ -1,0 +1,1862 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конструктор КП · прототип</title>
+<style>
+:root {
+  --bg: #f2f4f7;
+  --card: #ffffff;
+  --line: #dde3ea;
+  --line-strong: #c4ced9;
+  --text: #16202b;
+  --muted: #586777;
+  --faint: #8794a2;
+  --accent: #1d4f91;
+  --accent-hover: #163e73;
+  --accent-soft: #e9f0f9;
+  --ok: #0f7a45;
+  --ok-soft: #e4f5ec;
+  --warn: #9a5800;
+  --warn-soft: #fff5de;
+  --warn-line: #f0cf86;
+  --err: #b42318;
+  --err-soft: #fdeceb;
+  --err-line: #f2b8b1;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.previewing { overflow: hidden; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h2 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .1px; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 10px 20px; background: #fff; border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.logo {
+  width: 34px; height: 34px; border-radius: 8px; flex: none;
+  display: grid; place-items: center; background: var(--accent); color: #fff;
+  font-weight: 700; font-size: 13px; letter-spacing: .3px;
+}
+.app-title { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.app-title .sep { color: var(--faint); font-weight: 400; margin: 0 2px; }
+.app-title .proto { color: var(--muted); font-weight: 500; }
+.app-sub { font-size: 12px; color: var(--muted); }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  font-size: 11.5px; font-weight: 600; line-height: 1; padding: 5px 8px; border-radius: 999px;
+}
+.pill-warn { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn-line); }
+.pill-ok { background: var(--ok-soft); color: var(--ok); }
+.pill-err { background: var(--err-soft); color: var(--err); }
+.pill-muted { background: #eef1f4; color: var(--muted); }
+
+.layout {
+  display: grid; grid-template-columns: minmax(380px, 5fr) minmax(0, 7fr);
+  gap: 16px; padding: 16px 20px 8px; max-width: 1480px; margin: 0 auto; align-items: start;
+}
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px 16px; min-width: 0; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.card-head .aside { font-size: 12px; color: var(--muted); }
+.hint { margin: -4px 0 10px; font-size: 12.5px; color: var(--muted); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid transparent; border-radius: 7px; padding: 7px 13px;
+  font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #7aa7e0; outline-offset: 1px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-secondary { background: #fff; color: var(--accent); border-color: #a9c0df; }
+.btn-secondary:hover:not(:disabled) { background: var(--accent-soft); }
+.btn-ghost { background: #fff; border-color: var(--line-strong); color: var(--text); }
+.btn-ghost:hover:not(:disabled) { background: #f4f6f9; }
+.btn-link { background: none; border: none; padding: 2px 4px; color: var(--accent); font-weight: 600; font-size: 12.5px; }
+.btn-link:hover { text-decoration: underline; }
+.btn-sm { padding: 4px 10px; font-size: 12.5px; border-radius: 6px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field > span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.field > span i { color: var(--err); font-style: normal; margin-left: 2px; }
+.span-2 { grid-column: span 2; }
+input[type="text"], input[type="search"], input[type="number"], select, textarea {
+  width: 100%; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff;
+  padding: 7px 9px; font-size: 13.5px; min-width: 0;
+}
+input.invalid { border-color: var(--err-line); background: #fffafa; }
+input.soft-invalid { border-color: var(--warn-line); background: #fffcf3; }
+textarea { resize: vertical; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; }
+
+.search-row { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 8px; margin-bottom: 8px; }
+.result-count { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.catalog-list { max-height: 520px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.prod { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.prod:last-child { border-bottom: none; }
+.prod:hover { background: #fafbfd; }
+.prod.is-off { background: #fbfbfb; }
+.prod.is-off .prod-name { color: var(--muted); }
+.prod-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sku { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: .2px; }
+.prod-name { font-weight: 600; margin: 2px 0 2px; }
+.prod-specs { font-size: 12px; color: var(--muted); }
+.prod-brand { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
+.prod-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; }
+.price { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.price-req { color: var(--warn); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+.in-cart { font-size: 11.5px; color: var(--ok); font-weight: 600; }
+.status { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 5px; line-height: 1.3; }
+.status-active { background: var(--ok-soft); color: var(--ok); }
+.status-off { background: var(--err-soft); color: var(--err); }
+.status-req { background: var(--warn-soft); color: var(--warn); }
+.replace-hint { font-size: 12px; color: var(--muted); }
+.empty { padding: 22px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+.row-end { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 8px; }
+.kbd-hint { font-size: 11.5px; color: var(--faint); margin-right: auto; }
+.report { margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.report-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.report-row:last-child { border-bottom: none; }
+.report-row .label { font-weight: 650; }
+.report-row.r-ok .label { color: var(--ok); }
+.report-row.r-info .label { color: var(--accent); }
+.report-row.r-warn { background: var(--warn-soft); }
+.report-row.r-warn .label { color: var(--warn); }
+.report-row.r-err { background: var(--err-soft); }
+.report-row.r-err .label { color: var(--err); }
+.report-row.r-muted { background: #f8fafc; }
+.report-row.r-muted .label { color: var(--muted); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.chip { white-space: normal; }
+.chip .sku { color: inherit; white-space: nowrap; }
+.r-muted .chip { color: var(--muted); }
+.report-note { flex-basis: 100%; font-size: 11.5px; color: var(--muted); }
+.report-done { color: var(--ok); font-weight: 600; font-size: 12px; }
+.report-empty { padding: 10px 12px; font-size: 12.5px; color: var(--muted); }
+
+.quote-head { align-items: flex-start; }
+.quote-meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); }
+.quote-meta b { color: var(--text); font-weight: 650; }
+.quote-meta .num { font-family: var(--mono); font-size: 12.5px; color: var(--text); font-weight: 650; }
+
+.cart-wrap { overflow-x: auto; }
+.cart { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cart th {
+  text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px;
+  color: var(--faint); font-weight: 650; padding: 6px 6px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.cart td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.cart .num-col { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cart tr.row-warn td { background: var(--warn-soft); }
+.cart tr.row-err td { background: var(--err-soft); }
+.cart tr.flash td { animation: flash 1.2s ease-out; }
+@keyframes flash { 0% { background: #cfe0f7; } 100% { background: inherit; } }
+.cart .item-name { font-weight: 600; line-height: 1.3; }
+.cart .item-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.flags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.flag { font-size: 11px; font-weight: 650; padding: 2px 6px; border-radius: 5px; line-height: 1.3; }
+.flag-warn { background: #ffe7b0; color: #7a4500; }
+.flag-err { background: #fbd3cf; color: #8f1a12; }
+.qty { display: inline-flex; align-items: stretch; border: 1px solid var(--line-strong); border-radius: 7px; overflow: hidden; background: #fff; }
+.qty button { border: none; background: #f4f6f9; width: 24px; cursor: pointer; font-weight: 700; color: var(--muted); }
+.qty button:hover { background: #e8edf3; color: var(--text); }
+.qty input { width: 48px; border: none; border-radius: 0; text-align: center; padding: 5px 2px; -moz-appearance: textfield; }
+.qty input::-webkit-outer-spin-button, .qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-wrap { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.qty-unit { font-size: 12px; color: var(--muted); min-width: 40px; }
+.disc input { width: 58px; text-align: right; padding: 5px 7px; }
+.price-locked { white-space: nowrap; }
+.price-locked small { display: block; font-size: 10.5px; color: var(--faint); font-weight: 500; }
+.line-total { font-weight: 650; }
+.line-disc { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+.remove {
+  border: none; background: none; color: var(--faint); cursor: pointer; font-size: 18px; line-height: 1;
+  width: 26px; height: 26px; border-radius: 6px;
+}
+.remove:hover { background: var(--err-soft); color: var(--err); }
+.m-label { display: none; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.cart-empty { padding: 28px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 8px; }
+.cart-empty b { display: block; color: var(--text); margin-bottom: 4px; }
+
+.totals { margin-top: 12px; margin-left: auto; width: min(380px, 100%); font-variant-numeric: tabular-nums; }
+.totals-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 13.5px; }
+.totals-row .muted { color: var(--muted); }
+.totals-row.grand { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 8px; font-size: 17px; font-weight: 750; }
+.totals-row.grand.partial { color: var(--muted); font-size: 15px; font-weight: 650; }
+.totals-note { font-size: 11.5px; color: var(--err); text-align: right; margin-top: 2px; }
+.totals-row.vat { color: var(--muted); font-size: 12.5px; }
+.totals-units { font-size: 12px; color: var(--muted); }
+
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.check { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; align-items: start; padding: 7px 10px; border-radius: 7px; font-size: 13px; }
+.check .ic { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; margin-top: 1px; }
+.check.c-err { background: var(--err-soft); }
+.check.c-err .ic { background: var(--err); }
+.check.c-warn { background: var(--warn-soft); }
+.check.c-warn .ic { background: #c27803; }
+.check.c-ok { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.check.c-ok .ic { background: var(--ok); }
+.check[data-sku] { cursor: pointer; }
+.check[data-sku]:hover { filter: brightness(.98); }
+.check[data-sku]:focus-visible { outline: 2px solid #7aa7e0; outline-offset: 1px; }
+.check .sku { color: inherit; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.actions-hint { font-size: 12px; color: var(--muted); }
+.attach-state { font-size: 12px; text-align: right; }
+
+.log { list-style: none; margin: 0; padding: 0; max-height: 210px; overflow: auto; font-size: 12.5px; }
+.log li { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+.log li:last-child { border-bottom: none; }
+.log time { color: var(--faint); font-variant-numeric: tabular-nums; }
+.log .log-empty { display: block; color: var(--muted); border: none; }
+
+.demo-card { background: #f8fafc; border-style: dashed; }
+.demo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.foot { max-width: 1480px; margin: 0 auto; padding: 8px 20px 28px; font-size: 12px; color: var(--faint); }
+.foot code { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+
+.toast {
+  position: fixed; right: 20px; bottom: 20px; z-index: 60; max-width: 540px;
+  background: #13263f; color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13.5px;
+  box-shadow: 0 10px 30px rgba(10, 20, 40, .28);
+  opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s, transform .18s;
+}
+.toast.show { opacity: 1; transform: none; pointer-events: auto; }
+.toast.t-ok { border-left: 4px solid #3ccf8e; }
+.toast.t-warn { border-left: 4px solid #f2b53c; }
+
+.preview { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: rgba(19, 29, 42, .6); }
+.preview[hidden] { display: none; }
+.confirm { position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(19, 29, 42, .45); }
+.confirm[hidden] { display: none; }
+.confirm-box { width: min(440px, 100%); background: #fff; border-radius: 12px; padding: 18px 20px 16px; box-shadow: 0 16px 48px rgba(10, 20, 40, .3); }
+.confirm-box p { margin: 0 0 14px; font-size: 14px; }
+.confirm-btns { display: flex; justify-content: flex-end; gap: 8px; }
+.preview-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: #fff; border-bottom: 1px solid var(--line);
+}
+.preview-bar .t { font-weight: 650; }
+.preview-bar .s { font-size: 12px; color: var(--muted); }
+.preview-bar .btns { display: flex; gap: 8px; }
+.doc-wrap { flex: 1; overflow: auto; padding: 24px 16px 40px; }
+.doc {
+  width: 210mm; max-width: 100%; min-height: 297mm; margin: 0 auto; background: #fff; color: #111;
+  padding: 15mm 14mm; box-shadow: 0 12px 40px rgba(0, 0, 0, .3); font-size: 12.5px; line-height: 1.45;
+}
+.doc-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 2px solid #1d4f91; }
+.doc-company-name { font-size: 16px; font-weight: 750; color: #1d4f91; }
+.doc-req { font-size: 11px; color: #555; margin-top: 3px; }
+.doc-stamp { align-self: flex-start; font-size: 10.5px; color: #8a5a00; border: 1px dashed #d9a640; padding: 3px 7px; border-radius: 4px; white-space: nowrap; }
+.doc-title { font-size: 18px; margin: 18px 0 2px; font-weight: 750; }
+.doc-subtitle { color: #555; margin-bottom: 14px; }
+.doc-parties { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+.doc-parties td { padding: 3px 0; vertical-align: top; }
+.doc-parties td:first-child { width: 150px; color: #555; }
+.doc-intro { margin: 0 0 12px; }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.doc-table th { background: #eef2f7; text-align: left; font-weight: 700; padding: 6px 6px; border: 1px solid #c9d2dd; white-space: nowrap; }
+.doc-table td { padding: 6px 6px; border: 1px solid #d6dde5; vertical-align: top; }
+.doc-table .r { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.doc-table .c { text-align: center; }
+.doc-table .sku { color: #111; font-size: 10.5px; white-space: nowrap; }
+.doc-specs { color: #666; font-size: 10.5px; margin-top: 2px; }
+.doc-totals { width: 330px; margin: 10px 0 0 auto; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.doc-totals td { padding: 3px 0; }
+.doc-totals td:last-child { text-align: right; white-space: nowrap; }
+.doc-totals tr.grand td { font-weight: 750; font-size: 14px; border-top: 1px solid #333; padding-top: 6px; }
+.doc-totals tr.vat td { color: #555; }
+.doc-terms { margin-top: 18px; }
+.doc-terms h3 { font-size: 13px; margin: 0 0 6px; }
+.doc-terms ul { margin: 0; padding-left: 18px; }
+.doc-terms li { margin: 2px 0; }
+.doc-sign { margin-top: 30px; display: flex; justify-content: space-between; gap: 20px; color: #333; }
+.doc-foot { margin-top: 26px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 10px; color: #888; }
+.print-hint { display: none; }
+
+@media (max-width: 1439px) {
+  .cart .col-idx { display: none; }
+  .cart thead { display: none; }
+  .cart, .cart tbody { display: block; }
+  .cart tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto minmax(104px, auto) auto;
+    align-items: start; column-gap: 12px; row-gap: 6px; padding: 10px 8px; border-bottom: 1px solid var(--line);
+  }
+  .cart td { display: block; padding: 0; border: none; }
+  .cart td.item-cell { grid-column: 1 / -1; }
+  .cart td.price-cell { text-align: left; }
+  .cart td.rm-cell { align-self: center; }
+  .cart tr.row-warn { background: var(--warn-soft); }
+  .cart tr.row-err { background: var(--err-soft); }
+  .cart tr.row-warn td, .cart tr.row-err td { background: none; }
+  .m-label { display: block; margin-bottom: 3px; }
+}
+@media (max-width: 1180px) {
+  .layout { grid-template-columns: minmax(360px, 1fr) minmax(0, 1.35fr); gap: 12px; padding: 12px 12px 8px; }
+  .search-row { grid-template-columns: minmax(0, 1fr) 160px; }
+  .report-row { grid-template-columns: 140px minmax(0, 1fr); }
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row dense; }
+  .app-sub { display: none; }
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media print {
+  @page {
+    size: A4; margin: 12mm 12mm 14mm;
+    @bottom-right { content: "стр. " counter(page) " из " counter(pages); font: 8pt -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #777; }
+  }
+  html, body { background: #fff !important; }
+  body.previewing { overflow: visible !important; }
+  .confirm, .toast { display: none !important; }
+  body > *:not(#preview):not(.print-hint) { display: none !important; }
+  body.previewing > .print-hint { display: none !important; }
+  body:not(.previewing) > .print-hint { display: block !important; padding: 20mm; font-size: 14px; }
+  #preview { position: static !important; background: none !important; display: block !important; }
+  #preview[hidden] { display: none !important; }
+  .preview-bar { display: none !important; }
+  .doc-wrap { padding: 0 !important; overflow: visible !important; }
+  .doc { width: auto; min-height: 0; padding: 0; margin: 0; box-shadow: none; max-width: none; }
+  .doc-table { width: calc(100% - 2px); }
+  .doc-table tr { break-inside: avoid; }
+  .doc-table thead { display: table-header-group; }
+  .doc-totals, .doc-terms, .doc-sign { break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">КП</div>
+    <div>
+      <div class="app-title">Конструктор КП <span class="sep">·</span> <span class="proto">прототип</span></div>
+      <div class="app-sub">Подбор оборудования из PIM и выпуск КП по сделке Битрикс24</div>
+    </div>
+    <span class="pill pill-warn" title="Товары, бренды, цены и реквизиты выдуманы">данные условные</span>
+  </div>
+  <div class="topbar-actions">
+    <button type="button" id="btn-new" class="btn btn-ghost">Новое КП</button>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="col">
+    <div class="card">
+      <div class="card-head">
+        <h2>Сделка и клиент</h2>
+        <button type="button" id="btn-example" class="btn btn-link">Подставить пример</button>
+      </div>
+      <p class="hint">В v1 номер сделки и клиент подтягиваются из карточки сделки Битрикс24. В прототипе вводятся вручную.</p>
+      <div class="form-grid">
+        <label class="field"><span>Сделка №<i>*</i></span><input type="text" id="f-deal" inputmode="numeric" autocomplete="off" placeholder="например, 18452"></label>
+        <label class="field span-2 client-name"><span>Клиент, название<i>*</i></span><input type="text" id="f-client" autocomplete="off" placeholder="ООО «…»"></label>
+        <label class="field"><span>ИНН</span><input type="text" id="f-inn" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="необязательно"></label>
+        <label class="field span-2"><span>Контактное лицо</span><input type="text" id="f-contact" autocomplete="off" placeholder="ФИО, должность"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Каталог товаров</h2>
+        <span class="aside" id="catalog-source"></span>
+      </div>
+      <div class="search-row">
+        <input type="search" id="q" placeholder="Артикул или название" autocomplete="off" aria-label="Поиск по каталогу">
+        <select id="cat" aria-label="Категория"></select>
+      </div>
+      <p class="result-count" id="result-count"></p>
+      <div class="catalog-list" id="catalog-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Добавить списком артикулов</h2>
+        <button type="button" id="btn-bulk-example" class="btn btn-link">Вставить пример</button>
+      </div>
+      <p class="hint">Вставьте артикулы из переписки: через перенос строки, запятую, «;», «/» или пробел, регистр не важен. Количество — до или после артикула: «IS-BAL-1100 x2», «2 шт IS-BAL-1100». Слова без цифр пропускаются, ненайденные артикулы остаются в поле.</p>
+      <textarea id="bulk-input" rows="4" spellcheck="false" aria-label="Список артикулов" placeholder="IS-LFT-2040, IS-TYR-0001&#10;IS-BAL-1100 x2"></textarea>
+      <div class="row-end">
+        <span class="kbd-hint">Ctrl + Enter — добавить</span>
+        <button type="button" id="btn-bulk" class="btn btn-primary">Добавить в КП</button>
+      </div>
+      <div id="bulk-report"></div>
+    </div>
+  </section>
+
+  <section class="col">
+    <div class="card">
+      <div class="card-head quote-head">
+        <div>
+          <h2>Коммерческое предложение</h2>
+          <div class="quote-meta" id="quote-meta"></div>
+        </div>
+        <div class="attach-state" id="attach-state"></div>
+      </div>
+      <div id="cart"></div>
+      <div id="totals"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Готовность КП</h2>
+        <span id="checks-summary"></span>
+      </div>
+      <ul class="checks" id="checks"></ul>
+      <div class="actions">
+        <button type="button" id="btn-preview" class="btn btn-primary">Предпросмотр КП</button>
+        <button type="button" id="btn-attach" class="btn btn-secondary">Прикрепить к сделке</button>
+        <span class="actions-hint" id="actions-hint"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Журнал действий</h2>
+        <span class="aside">последние 30 записей</span>
+      </div>
+      <ol class="log" id="log"></ol>
+    </div>
+
+    <div class="card demo-card">
+      <div class="card-head">
+        <h2>Сценарии для проверки</h2>
+        <span class="aside">только в прототипе</span>
+      </div>
+      <p class="hint">Быстро собрать КП и увидеть проверки в действии. Изменения мока PIM живут до перезагрузки страницы.</p>
+      <div class="demo-actions">
+        <button type="button" class="btn btn-ghost btn-sm" id="demo-fill">Собрать пример КП</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="demo-discontinue">PIM: снять с продажи позицию из КП</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="demo-reset">Вернуть мок PIM</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  Прототип к тестовому заданию. Товары — встроенный мок PIM за адаптером <code>pimAdapter</code> (поиск, карточка по артикулу); в v1 на его место встаёт API или выгрузка PIM. Запись в сделку — имитация, в v1 — REST API Битрикс24. Бренды, артикулы, цены и реквизиты выдуманы.
+</footer>
+
+<div class="preview" id="preview" hidden role="dialog" aria-modal="true" aria-labelledby="preview-title">
+  <div class="preview-bar">
+    <div>
+      <div class="t" id="preview-title">Предпросмотр КП</div>
+      <div class="s">В окне печати выберите «Сохранить как PDF». Печатается только документ. Если окно печати не открылось, откройте файл прямо в Chrome или Safari.</div>
+    </div>
+    <div class="btns">
+      <button type="button" id="btn-print" class="btn btn-primary">Сохранить в PDF</button>
+      <button type="button" id="btn-close-preview" class="btn btn-ghost">Закрыть</button>
+    </div>
+  </div>
+  <div class="doc-wrap">
+    <article class="doc" id="doc"></article>
+  </div>
+</div>
+
+<div class="confirm" id="confirm" hidden role="alertdialog" aria-modal="true" aria-labelledby="confirm-text">
+  <div class="confirm-box">
+    <p id="confirm-text"></p>
+    <div class="confirm-btns">
+      <button type="button" id="confirm-ok" class="btn btn-primary">Да</button>
+      <button type="button" id="confirm-cancel" class="btn btn-ghost">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<style id="page-meta"></style>
+<div class="print-hint">Чтобы сохранить КП в PDF, откройте «Предпросмотр КП» и нажмите «Сохранить в PDF».</div>
+
+<script id="kp-core">
+"use strict";
+
+const KPCore = (() => {
+  const DISCOUNT_LIMIT = 5;
+  const VAT_RATE = 22;
+  const VALIDITY_DAYS = 10;
+  const MAX_QTY = 9999;
+
+  const LOOKALIKES = { "А": "A", "В": "B", "С": "C", "Е": "E", "Н": "H", "К": "K", "М": "M", "О": "O", "Р": "P", "Т": "T", "Х": "X", "У": "Y", "І": "I" };
+
+  function skuKey(raw) {
+    return String(raw == null ? "" : raw)
+      .toUpperCase()
+      .replace(/[АВСЕНКМОРТХУІ]/g, ch => LOOKALIKES[ch])
+      .replace(/[^A-Z0-9]/g, "");
+  }
+
+  function normalizeText(raw) {
+    return String(raw == null ? "" : raw)
+      .toLowerCase()
+      .replace(/ё/g, "е")
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .trim();
+  }
+
+  function parseQty(value) {
+    const n = parseInt(String(value == null ? "" : value).replace(/\s+/g, ""), 10);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.min(n, MAX_QTY);
+  }
+
+  function parseDiscount(value) {
+    const n = parseFloat(String(value == null ? "" : value).replace(/\s+/g, "").replace(",", "."));
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.min(Math.round(n * 100) / 100, 100);
+  }
+
+  function toKop(rub) {
+    return Math.round(Number(rub) * 100);
+  }
+
+  function vatIncluded(totalKop, rate = VAT_RATE) {
+    return Math.round(totalKop * rate / (100 + rate));
+  }
+
+  const UNIT_WORDS = "шт|штук[аи]?|pcs|pc|ед|единиц[аы]?|компл|комплект(?:а|ов)?|кмп|упак(?:овк[аи]|овок)?";
+  const UNIT = new RegExp(`^(?:${UNIT_WORDS})$`, "i");
+  const QTY_MARK = /^[xXхХ×*]$/;
+  const QTY_TOKEN = new RegExp(`^([xXхХ×*])?([^\\p{L}]*\\d[^\\p{L}]*?)(${UNIT_WORDS})?$`, "iu");
+  const SKU_WITH_QTY = /^(.*\d)[xXхХ×*](\d{1,5})$/;
+  const NOISE = /^[-–—:=]+$/;
+  const EDGE_PUNCT = /^["'«»„“”(\[]+|["'«»„“”)\].:!?]+$/g;
+  const DECIMAL_COMMA = /(^|[\sxXхХ×*])(\d+),(\d+)(?=$|\s|\p{L})/gu;
+  const LINE_SPLIT = /\r\n|\r|\n/;
+  const CHUNK_SPLIT = /[,;/|]+/;
+  const DECIMAL_MARK = "\u201A";
+
+  function qtyFromDigits(digits) {
+    const n = parseInt(digits, 10);
+    return n >= 1 ? { qty: Math.min(n, MAX_QTY) } : { bad: true };
+  }
+
+  function readQty(raw) {
+    const m = QTY_TOKEN.exec(raw);
+    if (!m) return null;
+    const [, mark, body, unit] = m;
+    if (!mark && !unit && /^\d{6,}$/.test(body)) return null;
+    return /^\d{1,5}$/.test(body) ? qtyFromDigits(body) : { bad: true };
+  }
+
+  function isSkuLike(raw) {
+    if (!/\d/.test(raw)) return false;
+    if (/\p{L}/u.test(raw)) return skuKey(raw).length >= 3;
+    return /^\d{6,}$/.test(raw);
+  }
+
+  function parseSkuInput(text) {
+    const items = [];
+    const ignored = [];
+    const assign = (item, q, token) => {
+      item.qtySet = true;
+      if (q.bad) {
+        item.qtyError = token;
+      } else {
+        item.qty = q.qty;
+        item.qtyError = null;
+      }
+    };
+    for (const line of String(text == null ? "" : text).split(LINE_SPLIT)) {
+      let lineLast = null;
+      for (const chunk of line.replace(DECIMAL_COMMA, `$1$2${DECIMAL_MARK}$3`).split(CHUNK_SPLIT)) {
+        let last = null;
+        let awaitingQty = false;
+        let pending = null;
+        for (const token of chunk.trim().split(/\s+/)) {
+          const raw = token.replace(EDGE_PUNCT, "").split(DECIMAL_MARK).join(",");
+          if (!raw || NOISE.test(raw) || UNIT.test(raw)) continue;
+          if (QTY_MARK.test(raw)) {
+            awaitingQty = last !== null;
+            continue;
+          }
+          const q = readQty(raw);
+          if (q) {
+            if (last && (awaitingQty || !last.qtySet)) {
+              assign(last, q, raw);
+            } else {
+              if (pending) ignored.push(pending.token);
+              pending = { q, token: raw };
+            }
+            awaitingQty = false;
+            continue;
+          }
+          const m = raw.match(SKU_WITH_QTY);
+          const joined = Boolean(m) && isSkuLike(m[1]);
+          const skuRaw = joined ? m[1] : raw;
+          if (!isSkuLike(skuRaw)) {
+            ignored.push(raw);
+            continue;
+          }
+          const item = { raw: skuRaw, qty: 1, qtySet: false, qtyError: null };
+          if (joined) assign(item, qtyFromDigits(m[2]), raw);
+          if (pending) {
+            if (!item.qtySet) assign(item, pending.q, pending.token);
+            else ignored.push(pending.token);
+            pending = null;
+          }
+          items.push(item);
+          last = item;
+          lineLast = item;
+          awaitingQty = false;
+        }
+        if (pending) {
+          if (!last && lineLast && !lineLast.qtySet) assign(lineLast, pending.q, pending.token);
+          else ignored.push(pending.token);
+        }
+      }
+    }
+    return {
+      items: items
+        .map(({ raw, qty, qtyError }) => ({ raw, key: skuKey(raw), qty: qtyError ? 0 : qty, qtyError }))
+        .filter(item => item.key),
+      ignored: [...new Set(ignored)]
+    };
+  }
+
+  function parseSkuList(text) {
+    return parseSkuInput(text).items;
+  }
+
+  function addLine(lines, sku, qty = 1) {
+    const next = lines.map(line => ({ ...line }));
+    const existing = next.find(line => line.sku === sku);
+    if (existing) {
+      existing.qty = Math.min(existing.qty + qty, MAX_QTY);
+      return { lines: next, existed: true, line: existing };
+    }
+    const line = { sku, qty: Math.min(qty, MAX_QTY), discount: 0 };
+    next.push(line);
+    return { lines: next, existed: false, line };
+  }
+
+  function unitOf(product) {
+    return (product && product.unit) || "шт.";
+  }
+
+  function applySkuList(lines, items, getBySku) {
+    const report = { added: [], increased: [], notFound: [], discontinued: [], noPrice: [], badQty: [] };
+    const found = new Map();
+    const missing = new Map();
+    for (const item of items) {
+      const product = getBySku(item.raw);
+      if (!product) {
+        if (!missing.has(item.key)) missing.set(item.key, item.raw);
+        continue;
+      }
+      if (item.qtyError) {
+        report.badQty.push({ sku: product.sku, raw: item.raw, token: item.qtyError });
+        continue;
+      }
+      const acc = found.get(product.sku);
+      if (acc) acc.qty += item.qty;
+      else found.set(product.sku, { product, qty: item.qty });
+    }
+    report.notFound = [...missing.values()];
+    let next = lines;
+    for (const { product, qty } of found.values()) {
+      const base = { sku: product.sku, name: product.name, qty, unit: unitOf(product) };
+      if (product.status !== "active") {
+        report.discontinued.push({ ...base, replacedBy: product.replacedBy || null });
+        continue;
+      }
+      const result = addLine(next, product.sku, qty);
+      next = result.lines;
+      const entry = { ...base, total: result.line.qty, existed: result.existed };
+      if (product.price == null) report.noPrice.push(entry);
+      else if (result.existed) report.increased.push(entry);
+      else report.added.push(entry);
+    }
+    return { lines: next === lines ? lines.map(line => ({ ...line })) : next, report };
+  }
+
+  function replaceLine(lines, sku, withSku) {
+    const next = lines.map(line => ({ ...line }));
+    const idx = next.findIndex(line => line.sku === sku);
+    if (idx < 0 || sku === withSku) return { lines: next, replaced: false, merged: false };
+    const old = next[idx];
+    const qty = Math.min(Math.max(parseQty(old.qty), 1), MAX_QTY);
+    const existing = next.find(line => line.sku === withSku);
+    if (existing) {
+      existing.qty = Math.min(parseQty(existing.qty) + qty, MAX_QTY);
+      next.splice(idx, 1);
+      return { lines: next, replaced: true, merged: true };
+    }
+    next.splice(idx, 1, { sku: withSku, qty, discount: parseDiscount(old.discount) });
+    return { lines: next, replaced: true, merged: false };
+  }
+
+  function discountKop(baseKop, discount) {
+    const bp = Math.round(parseDiscount(discount) * 100);
+    const whole = Math.floor(baseKop / 10000);
+    const rest = baseKop - whole * 10000;
+    return whole * bp + Math.floor((rest * bp + 5000) / 10000);
+  }
+
+  function calcLine(line, product, limit = DISCOUNT_LIMIT) {
+    const qty = parseQty(line.qty);
+    const discount = parseDiscount(line.discount);
+    const hasPrice = Boolean(product) && product.price != null;
+    const unit = hasPrice ? toKop(product.price) : 0;
+    const base = unit * qty;
+    const discountAmount = discountKop(base, discount);
+    return {
+      sku: line.sku,
+      product: product || null,
+      qty,
+      discount,
+      unit,
+      base,
+      discountAmount,
+      total: base - discountAmount,
+      hasPrice,
+      missing: !product,
+      discontinued: Boolean(product) && product.status !== "active",
+      overLimit: discount > limit
+    };
+  }
+
+  function calcTotals(lines, getBySku, limit = DISCOUNT_LIMIT) {
+    const rows = lines.map(line => calcLine(line, getBySku(line.sku), limit));
+    const subtotal = rows.reduce((s, r) => s + r.base, 0);
+    const discount = rows.reduce((s, r) => s + r.discountAmount, 0);
+    const total = subtotal - discount;
+    const units = rows.reduce((s, r) => s + r.qty, 0);
+    return { rows, subtotal, discount, total, vat: vatIncluded(total), units };
+  }
+
+  function validateQuote(input, totals, limit = DISCOUNT_LIMIT) {
+    const blocking = [];
+    const warnings = [];
+    const deal = String(input.deal || "").trim();
+    const clientName = String((input.client && input.client.name) || "").trim();
+    const inn = String((input.client && input.client.inn) || "").trim();
+    if (!deal) blocking.push({ code: "no-deal", text: "Не указан номер сделки" });
+    if (!clientName) blocking.push({ code: "no-client", text: "Не указан клиент" });
+    if (!totals.rows.length) blocking.push({ code: "empty", text: "В КП нет ни одной позиции" });
+    if (inn && !/^(?:\d{10}|\d{12})$/.test(inn)) {
+      warnings.push({ code: "inn-length", text: `ИНН клиента: ${inn.length} цифр, ожидается 10 (организация) или 12 (ИП)` });
+    }
+    for (const row of totals.rows) {
+      if (row.missing) {
+        blocking.push({ code: "missing", sku: row.sku, text: "позиция не найдена в PIM — удалите её" });
+      } else if (row.discontinued) {
+        const repl = row.product.replacedBy ? ` или замените на ${row.product.replacedBy}` : " или замените";
+        blocking.push({ code: "discontinued", sku: row.sku, text: `снята с продажи — удалите${repl}` });
+      } else if (!row.hasPrice) {
+        blocking.push({ code: "no-price", sku: row.sku, text: "нет цены в PIM (цена по запросу) — КП не выпускается без цены" });
+      }
+      if (row.qty < 1) {
+        blocking.push({ code: "zero-qty", sku: row.sku, text: "количество 0 — укажите количество или удалите позицию" });
+      }
+      if (row.overLimit) {
+        warnings.push({ code: "discount-limit", sku: row.sku, text: `скидка ${formatPercent(row.discount)} выше лимита менеджера ${limit}% — нужно согласование РОП` });
+      }
+      if (row.discount >= 100) {
+        warnings.push({ code: "discount-full", sku: row.sku, text: "скидка 100% — позиция уйдёт в КП бесплатно, проверьте" });
+      }
+    }
+    return { blocking, warnings, ready: blocking.length === 0 };
+  }
+
+  function isIssuedCurrent(issued, { deal, signature, today }) {
+    if (!issued || issued.deal !== deal || issued.signature !== signature) return false;
+    const date = fromISODate(issued.date);
+    return Boolean(date) && addDays(date, VALIDITY_DAYS) >= today;
+  }
+
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function addDays(date, days) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  }
+
+  function formatDate(date) {
+    return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+  }
+
+  function toISODate(date) {
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  }
+
+  function fromISODate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    if (!m) return null;
+    const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return toISODate(date) === m[0] ? date : null;
+  }
+
+  function quoteNumber(deal, date, seq) {
+    const stamp = `${pad2(date.getDate())}${pad2(date.getMonth() + 1)}${String(date.getFullYear()).slice(-2)}`;
+    return `КП-${String(deal).trim()}-${stamp}-${seq}`;
+  }
+
+  function groupDigits(n) {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  }
+
+  function formatMoney(kop, { whole = false } = {}) {
+    const sign = kop < 0 ? "−" : "";
+    const abs = Math.abs(Math.round(kop));
+    const rub = Math.floor(abs / 100);
+    const cents = abs % 100;
+    if (whole && cents === 0) return `${sign}${groupDigits(rub)} ₽`;
+    return `${sign}${groupDigits(rub)},${pad2(cents)} ₽`;
+  }
+
+  function formatPercent(value) {
+    return `${String(value).replace(".", ",")}%`;
+  }
+
+  return {
+    DISCOUNT_LIMIT, VAT_RATE, VALIDITY_DAYS, MAX_QTY,
+    skuKey, normalizeText, parseQty, parseDiscount, toKop, vatIncluded, discountKop, unitOf,
+    parseSkuInput, parseSkuList, addLine, applySkuList, replaceLine, calcLine, calcTotals, validateQuote,
+    isIssuedCurrent, addDays, formatDate, toISODate, fromISODate, quoteNumber, formatMoney, formatPercent
+  };
+})();
+
+const PIM_CATEGORIES = [
+  "Подъёмники",
+  "Шиномонтаж",
+  "Балансировка",
+  "Развал-схождение",
+  "Компрессоры и пневматика",
+  "Гаражное оборудование",
+  "Расходники и аксессуары"
+];
+
+const PIM_MOCK_CATALOG = [
+  { sku: "IS-LFT-2040", name: "Подъёмник двухстоечный электрогидравлический 4 т", brand: "Арголифт", category: "Подъёмники", specs: [["Грузоподъёмность", "4,0 т"], ["Высота подъёма", "1 900 мм"], ["Питание", "380 В"]], price: 389000, status: "active" },
+  { sku: "IS-LFT-2055", name: "Подъёмник двухстоечный 5,5 т с верхней синхронизацией", brand: "Арголифт", category: "Подъёмники", specs: [["Грузоподъёмность", "5,5 т"], ["Высота подъёма", "2 000 мм"], ["Питание", "380 В"]], price: 548000, status: "active" },
+  { sku: "IS-LFT-4045", name: "Подъёмник четырёхстоечный под развал-схождение 4,5 т", brand: "Арголифт", category: "Подъёмники", specs: [["Грузоподъёмность", "4,5 т"], ["Длина платформ", "4 600 мм"], ["Ниши под поворотные круги", "есть"]], price: 815000, status: "active" },
+  { sku: "IS-LFT-3030", name: "Подъёмник ножничный низкопрофильный 3 т", brand: "Арголифт", category: "Подъёмники", specs: [["Грузоподъёмность", "3,0 т"], ["Высота в сложенном виде", "105 мм"], ["Установка", "на пол, без приямка"]], price: 472000, status: "active" },
+  { sku: "IS-LFT-2032", name: "Подъёмник двухстоечный 3,2 т, 220 В", brand: "Арголифт", category: "Подъёмники", specs: [["Грузоподъёмность", "3,2 т"], ["Высота подъёма", "1 850 мм"], ["Питание", "220 В"]], price: 298000, status: "discontinued", replacedBy: "IS-LFT-2040" },
+
+  { sku: "IS-TYR-0001", name: "Шиномонтажный станок полуавтоматический 10–24\"", brand: "Колесар", category: "Шиномонтаж", specs: [["Диаметр диска", "10–24\""], ["Макс. диаметр колеса", "1 040 мм"], ["Питание", "220 В"]], price: 129000, status: "active" },
+  { sku: "IS-TYR-0026", name: "Шиномонтажный станок автоматический с вспомогательной рукой", brand: "Колесар", category: "Шиномонтаж", specs: [["Диаметр диска", "12–26\""], ["Вспомогательная рука", "правая, пневмо"], ["Питание", "380 В"]], price: 298000, status: "active" },
+  { sku: "IS-TYR-0056", name: "Шиномонтажный станок для грузовых колёс 14–56\"", brand: "Колесар", category: "Шиномонтаж", specs: [["Диаметр диска", "14–56\""], ["Макс. вес колеса", "1 500 кг"], ["Привод", "электрогидравлический"]], price: null, status: "active" },
+  { sku: "IS-TYR-0110", name: "Вулканизатор настольный с таймером", brand: "Колесар", category: "Шиномонтаж", specs: [["Площадь нагрева", "200 × 150 мм"], ["Температура", "до 150 °C"], ["Питание", "220 В"]], price: 28900, status: "active" },
+  { sku: "IS-TYR-0200", name: "Бортрасширитель пневматический", brand: "Колесар", category: "Шиномонтаж", specs: [["Ширина шины", "до 400 мм"], ["Рабочее давление", "8–10 бар"], ["Привод", "педаль"]], price: 34500, status: "active" },
+
+  { sku: "IS-BAL-1100", name: "Балансировочный станок полуавтоматический 10–24\"", brand: "Баланта", category: "Балансировка", specs: [["Диаметр диска", "10–24\""], ["Макс. вес колеса", "65 кг"], ["Время цикла", "7 с"]], price: 112000, status: "active" },
+  { sku: "IS-BAL-1250", name: "Балансировочный станок автоматический с сонаром и лазерным указателем", brand: "Баланта", category: "Балансировка", specs: [["Диаметр диска", "10–28\""], ["Ввод параметров", "автоматический, сонар"], ["Время цикла", "6 с"]], price: 265000, status: "active" },
+  { sku: "IS-BAL-1900", name: "Балансировочный станок для грузовых колёс", brand: "Баланта", category: "Балансировка", specs: [["Диаметр диска", "13–26\""], ["Макс. вес колеса", "200 кг"], ["Подъёмник колеса", "пневматический"]], price: 318000, status: "active" },
+  { sku: "IS-BAL-0105", name: "Набор конусов и адаптеров для легковых колёс", brand: "Баланта", category: "Балансировка", specs: [["Конусы", "4 шт., 42–118 мм"], ["Вал", "40 мм"], ["Кейс", "в комплекте"]], price: 14800, status: "active", unit: "компл." },
+  { sku: "IS-BAL-1080", name: "Балансировочный станок с ручным вводом параметров", brand: "Баланта", category: "Балансировка", specs: [["Диаметр диска", "10–22\""], ["Макс. вес колеса", "60 кг"], ["Ввод параметров", "ручной"]], price: 89000, status: "discontinued", replacedBy: "IS-BAL-1100" },
+
+  { sku: "IS-ALN-3050", name: "Стенд развал-схождения 3D, стационарная балка", brand: "Осевик", category: "Развал-схождение", specs: [["Технология", "3D, 2 камеры"], ["База автомобилей", "более 30 000 моделей"], ["Монтаж", "на стену или колонну"]], price: 1290000, status: "active" },
+  { sku: "IS-ALN-3020", name: "Стенд развал-схождения 3D мобильный с подъёмом балки", brand: "Осевик", category: "Развал-схождение", specs: [["Технология", "3D, 2 камеры"], ["Подъём балки", "электропривод"], ["Колёса", "мобильная стойка"]], price: 1045000, status: "active" },
+  { sku: "IS-ALN-0410", name: "Поворотные круги, комплект 2 шт.", brand: "Осевик", category: "Развал-схождение", specs: [["Нагрузка", "до 1 500 кг на круг"], ["Диаметр", "360 мм"], ["Высота", "50 мм"]], price: 46000, status: "active", unit: "компл." },
+  { sku: "IS-ALN-0420", name: "Фиксатор руля и упор педали тормоза", brand: "Осевик", category: "Развал-схождение", specs: [["Комплект", "фиксатор + упор"], ["Материал", "сталь"], ["Регулировка", "телескопическая"]], price: 6900, status: "active", unit: "компл." },
+
+  { sku: "IS-CMP-0100", name: "Компрессор поршневой 100 л, 220 В", brand: "Аэробор", category: "Компрессоры и пневматика", specs: [["Ресивер", "100 л"], ["Производительность", "420 л/мин"], ["Давление", "10 бар"]], price: 39800, status: "active" },
+  { sku: "IS-CMP-0270", name: "Компрессор поршневой 270 л, 380 В", brand: "Аэробор", category: "Компрессоры и пневматика", specs: [["Ресивер", "270 л"], ["Производительность", "690 л/мин"], ["Давление", "10 бар"]], price: 112500, status: "active" },
+  { sku: "IS-CMP-0500", name: "Компрессор винтовой 7,5 кВт с ресивером 500 л", brand: "Аэробор", category: "Компрессоры и пневматика", specs: [["Мощность", "7,5 кВт"], ["Производительность", "1 100 л/мин"], ["Давление", "10 бар"]], price: 448000, status: "active" },
+  { sku: "IS-PNE-1200", name: "Гайковёрт пневматический 1/2\"", brand: "Аэробор", category: "Компрессоры и пневматика", specs: [["Крутящий момент", "1 200 Н·м"], ["Расход воздуха", "140 л/мин"], ["Посадка", "1/2\""]], price: 21400, status: "active" },
+  { sku: "IS-PNE-0050", name: "Блок подготовки воздуха: фильтр, влагоотделитель, лубрикатор", brand: "Аэробор", category: "Компрессоры и пневматика", specs: [["Резьба", "1/2\""], ["Фильтрация", "5 мкм"], ["Пропускная способность", "1 500 л/мин"]], price: 9600, status: "active" },
+
+  { sku: "IS-GAR-0300", name: "Домкрат подкатной низкопрофильный 3 т", brand: "Верстакон", category: "Гаражное оборудование", specs: [["Грузоподъёмность", "3 т"], ["Мин. высота", "85 мм"], ["Макс. высота", "500 мм"]], price: 32900, status: "active" },
+  { sku: "IS-GAR-2000", name: "Траверса пневмогидравлическая 2 т", brand: "Верстакон", category: "Гаражное оборудование", specs: [["Грузоподъёмность", "2 т"], ["Ход штока", "280 мм"], ["Привод", "пневмогидравлический"]], price: 98000, status: "active" },
+  { sku: "IS-GAR-0310", name: "Стойка трансмиссионная 0,5 т", brand: "Верстакон", category: "Гаражное оборудование", specs: [["Грузоподъёмность", "0,5 т"], ["Высота подъёма", "1 100–1 900 мм"], ["Привод", "гидравлический, ножной"]], price: 38700, status: "active" },
+  { sku: "IS-GAR-0750", name: "Установка для слива масла 80 л", brand: "Верстакон", category: "Гаражное оборудование", specs: [["Объём бака", "80 л"], ["Высота воронки", "1 200–1 850 мм"], ["Опорожнение", "пневматическое"]], price: 46500, status: "active" },
+  { sku: "IS-GAR-0800", name: "Верстак слесарный двухтумбовый", brand: "Верстакон", category: "Гаражное оборудование", specs: [["Размер столешницы", "2 000 × 700 мм"], ["Нагрузка", "до 1 000 кг"], ["Ящики", "8 шт."]], price: 54000, status: "active" },
+
+  { sku: "IS-ACC-0010", name: "Грузики балансировочные самоклеящиеся, упаковка 1 кг", brand: "Сервикс", category: "Расходники и аксессуары", specs: [["Сегмент", "5 г"], ["Материал", "сталь, цинковое покрытие"], ["Упаковка", "1 кг"]], price: 3200, status: "active", unit: "упак." },
+  { sku: "IS-ACC-0020", name: "Паста шиномонтажная 5 кг", brand: "Сервикс", category: "Расходники и аксессуары", specs: [["Объём", "5 кг"], ["Консистенция", "густая"], ["Для шин", "легковых и грузовых"]], price: 2450, status: "active" },
+  { sku: "IS-ACC-0400", name: "Накладки резиновые для лап подъёмника, комплект 4 шт.", brand: "Сервикс", category: "Расходники и аксессуары", specs: [["Диаметр", "120 мм"], ["Высота", "30 мм"], ["Комплект", "4 шт."]], price: 3800, status: "active", unit: "компл." }
+];
+
+const pimMock = (() => {
+  const overrides = new Map();
+  return {
+    all() {
+      return PIM_MOCK_CATALOG.map(p => (overrides.has(p.sku) ? { ...p, ...overrides.get(p.sku) } : p));
+    },
+    override(sku, patch) {
+      overrides.set(sku, { ...(overrides.get(sku) || {}), ...patch });
+    },
+    reset() {
+      overrides.clear();
+    },
+    hasOverrides() {
+      return overrides.size > 0;
+    }
+  };
+})();
+
+const pimAdapter = {
+  source: "мок PIM",
+  categories() {
+    return PIM_CATEGORIES.slice();
+  },
+  count() {
+    return PIM_MOCK_CATALOG.length;
+  },
+  getBySku(sku) {
+    const key = KPCore.skuKey(sku);
+    if (!key) return null;
+    return pimMock.all().find(p => KPCore.skuKey(p.sku) === key) || null;
+  },
+  search({ query = "", category = "" } = {}) {
+    const text = String(query == null ? "" : query).trim();
+    const words = KPCore.normalizeText(text).split(" ").filter(w => w.length >= 2 || /\d/.test(w));
+    const skuLike = /[0-9a-z]/i.test(text) && (!/\s/.test(text) || /^[A-Za-z0-9\s._-]+$/.test(text));
+    const key = skuLike ? KPCore.skuKey(text) : "";
+    return pimMock.all().filter(p => {
+      if (category && p.category !== category) return false;
+      if (!words.length) return true;
+      if (key.length >= 3 && KPCore.skuKey(p.sku).includes(key)) return true;
+      const haystack = KPCore.normalizeText([p.sku, p.name, p.brand, p.category, ...p.specs.map(s => s.join(" "))].join(" "));
+      const tokens = haystack.split(" ");
+      return words.every(w => (/^\d+$/.test(w) ? tokens.some(t => t.startsWith(w)) : haystack.includes(w)));
+    });
+  }
+};
+</script>
+
+<script id="kp-ui">
+"use strict";
+
+(() => {
+  const STATE_KEY = "kp-constructor:v1:state";
+  const REGISTRY_KEY = "kp-constructor:v1:registry";
+  const LOG_KEY = "kp-constructor:v1:log";
+  const LOG_LIMIT = 30;
+
+  const { formatMoney, formatDate, formatPercent } = KPCore;
+  const $ = id => document.getElementById(id);
+
+  const storage = {
+    read(key, fallback) {
+      try {
+        const raw = window.localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    },
+    write(key, value) {
+      try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+  };
+
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[ch]);
+  }
+
+  function emptyState() {
+    return { deal: "", client: { name: "", inn: "", contact: "" }, lines: [], issued: null, attached: null };
+  }
+
+  function loadState() {
+    const raw = storage.read(STATE_KEY, null);
+    const state = emptyState();
+    if (!isObject(raw)) return state;
+    state.deal = typeof raw.deal === "string" ? raw.deal.replace(/\D+/g, "") : "";
+    if (isObject(raw.client)) {
+      for (const k of ["name", "inn", "contact"]) state.client[k] = typeof raw.client[k] === "string" ? raw.client[k] : "";
+    }
+    if (Array.isArray(raw.lines)) {
+      const seen = new Set();
+      state.lines = raw.lines
+        .filter(l => l && typeof l.sku === "string" && l.sku && !seen.has(l.sku) && seen.add(l.sku))
+        .map(l => ({ sku: l.sku, qty: KPCore.parseQty(l.qty), discount: KPCore.parseDiscount(l.discount) }));
+    }
+    const issued = raw.issued;
+    if (isObject(issued) && typeof issued.number === "string" && typeof issued.deal === "string" && KPCore.fromISODate(issued.date)) {
+      state.issued = {
+        number: issued.number, date: issued.date, deal: issued.deal, seq: Number(issued.seq) || 0,
+        signature: typeof issued.signature === "string" ? issued.signature : ""
+      };
+    }
+    const attached = raw.attached;
+    if (isObject(attached) && typeof attached.signature === "string" && Number.isFinite(attached.at)) {
+      state.attached = { at: attached.at, number: String(attached.number || ""), total: Number(attached.total) || 0, signature: attached.signature };
+    }
+    return state;
+  }
+
+  function isObject(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  }
+
+  let state = loadState();
+  let registry = storage.read(REGISTRY_KEY, {});
+  if (!isObject(registry)) registry = {};
+  let journal = storage.read(LOG_KEY, []);
+  journal = Array.isArray(journal) ? journal.filter(e => isObject(e) && Number.isFinite(e.at) && typeof e.text === "string") : [];
+
+  const ui = {
+    deal: $("f-deal"), client: $("f-client"), inn: $("f-inn"), contact: $("f-contact"),
+    q: $("q"), cat: $("cat"), catalog: $("catalog-list"), resultCount: $("result-count"), source: $("catalog-source"),
+    bulk: $("bulk-input"), bulkReport: $("bulk-report"),
+    quoteMeta: $("quote-meta"), attachState: $("attach-state"), cart: $("cart"), totals: $("totals"),
+    checks: $("checks"), checksSummary: $("checks-summary"), actionsHint: $("actions-hint"),
+    preview: $("preview"), doc: $("doc"), log: $("log"), toast: $("toast"), pageMeta: $("page-meta"),
+    confirm: $("confirm"), confirmText: $("confirm-text"), confirmOk: $("confirm-ok"), confirmCancel: $("confirm-cancel"),
+    btnPreview: $("btn-preview"), btnAttach: $("btn-attach")
+  };
+  const BASE_TITLE = document.title;
+
+  function persist() {
+    storage.write(STATE_KEY, state);
+  }
+
+  function compute() {
+    const totals = KPCore.calcTotals(state.lines, pimAdapter.getBySku);
+    const checks = KPCore.validateQuote(state, totals);
+    return { totals, checks };
+  }
+
+  function signature() {
+    return JSON.stringify({ deal: state.deal.trim(), client: state.client, lines: state.lines });
+  }
+
+  function today() {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  function nextSeq(deal) {
+    const fromRegistry = Number(registry[deal]);
+    const fromIssued = state.issued && state.issued.deal === deal ? Number(state.issued.seq) : 0;
+    return Math.max(Number.isFinite(fromRegistry) ? fromRegistry : 0, Number.isFinite(fromIssued) ? fromIssued : 0) + 1;
+  }
+
+  function staleReason(deal, date) {
+    const issued = state.issued;
+    if (!issued || issued.deal !== deal) return "";
+    if (issued.signature !== signature()) return "КП изменено после выпуска";
+    const issuedDate = KPCore.fromISODate(issued.date);
+    return issuedDate && KPCore.addDays(issuedDate, KPCore.VALIDITY_DAYS) < date ? "срок действия истёк" : "";
+  }
+
+  function currentQuote() {
+    const deal = state.deal.trim();
+    const date = today();
+    if (KPCore.isIssuedCurrent(state.issued, { deal, signature: signature(), today: date })) {
+      return { number: state.issued.number, date: KPCore.fromISODate(state.issued.date), draft: false, previous: null, reason: "" };
+    }
+    const reason = staleReason(deal, date);
+    const previous = reason ? state.issued.number : null;
+    if (!deal) return { number: null, date, draft: true, previous: null, reason: "" };
+    return { number: KPCore.quoteNumber(deal, date, nextSeq(deal)), date, draft: true, previous, reason };
+  }
+
+  function issueQuote() {
+    const deal = state.deal.trim();
+    const date = today();
+    const sig = signature();
+    if (KPCore.isIssuedCurrent(state.issued, { deal, signature: sig, today: date })) return currentQuote();
+    const { previous, reason } = currentQuote();
+    const seq = nextSeq(deal);
+    registry[deal] = seq;
+    storage.write(REGISTRY_KEY, registry);
+    state.issued = { number: KPCore.quoteNumber(deal, date, seq), date: KPCore.toISODate(date), deal, seq, signature: sig };
+    persist();
+    addLog(previous ? `Присвоен номер ${state.issued.number} вместо ${previous}: ${reason}` : `Присвоен номер ${state.issued.number}`);
+    return currentQuote();
+  }
+
+  function addLog(text) {
+    journal.unshift({ at: Date.now(), text });
+    journal = journal.slice(0, LOG_LIMIT);
+    storage.write(LOG_KEY, journal);
+    renderLog();
+  }
+
+  let toastTimer = null;
+  function toast(text, kind = "ok") {
+    ui.toast.textContent = text;
+    ui.toast.className = `toast show t-${kind}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { ui.toast.className = "toast"; }, 6500);
+  }
+
+  function specLine(product, limit = 3) {
+    return product.specs.slice(0, limit).map(([k, v]) => `${k}: ${v}`).join(" · ");
+  }
+
+  function qtyInCart(sku) {
+    const line = state.lines.find(l => l.sku === sku);
+    return line ? line.qty : 0;
+  }
+
+  function renderCategories() {
+    const options = ['<option value="">Все категории</option>']
+      .concat(pimAdapter.categories().map(c => `<option value="${esc(c)}">${esc(c)}</option>`));
+    ui.cat.innerHTML = options.join("");
+    ui.source.textContent = `источник: ${pimAdapter.source} · ${pimAdapter.count()} позиций`;
+  }
+
+  function renderCatalog() {
+    const list = pimAdapter.search({ query: ui.q.value, category: ui.cat.value });
+    ui.resultCount.textContent = `Найдено: ${list.length} из ${pimAdapter.count()}`;
+    if (!list.length) {
+      ui.catalog.innerHTML = '<div class="empty">Ничего не найдено. Проверьте артикул или сбросьте категорию.</div>';
+      return;
+    }
+    ui.catalog.innerHTML = list.map(p => {
+      const off = p.status !== "active";
+      const inCart = qtyInCart(p.sku);
+      const status = off
+        ? '<span class="status status-off">снят с продажи</span>'
+        : p.price == null
+          ? '<span class="status status-req">в продаже · цена по запросу</span>'
+          : '<span class="status status-active">в продаже</span>';
+      const price = p.price == null
+        ? '<span class="price-req">цена по запросу</span>'
+        : `<span class="price">${formatMoney(KPCore.toKop(p.price), { whole: true })}</span>`;
+      const action = off
+        ? (p.replacedBy
+            ? `<button type="button" class="btn btn-link" data-find="${esc(p.replacedBy)}">замена: ${esc(p.replacedBy)}</button>`
+            : '<span class="replace-hint">недоступен</span>')
+        : `<button type="button" class="btn btn-secondary btn-sm" data-add="${esc(p.sku)}">${inCart ? "+1 в КП" : "В КП"}</button>`;
+      return `<div class="prod${off ? " is-off" : ""}">
+        <div class="prod-main">
+          <div class="prod-top"><span class="sku">${esc(p.sku)}</span>${status}</div>
+          <div class="prod-name">${esc(p.name)}</div>
+          <div class="prod-specs">${esc(specLine(p))}</div>
+          <div class="prod-brand">${esc(p.brand)} · ${esc(p.category)}</div>
+        </div>
+        <div class="prod-side">
+          ${price}
+          ${action}
+          ${inCart ? `<span class="in-cart">в КП: ${inCart} ${esc(KPCore.unitOf(p))}</span>` : ""}
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function renderBulkReport(report, message, ignored = []) {
+    if (message) {
+      ui.bulkReport.innerHTML = `<div class="report"><div class="report-empty">${esc(message)}</div></div>`;
+      return;
+    }
+    const rows = [];
+    const chip = (sku, extra) => `<span class="chip"><span class="sku">${esc(sku)}</span>${extra ? ` ${extra}` : ""}</span>`;
+    const note = text => `<span class="report-note">${esc(text)}</span>`;
+    if (report.added.length) {
+      rows.push(["r-ok", `Добавлено: ${report.added.length}`, report.added.map(e => chip(e.sku, `× ${e.qty}`))]);
+    }
+    if (report.increased.length) {
+      rows.push(["r-info", `Увеличено: ${report.increased.length}`, report.increased.map(e => chip(e.sku, `+${e.qty} → ${e.total} ${esc(e.unit)}`))
+        .concat(note("уже были в КП, количество прибавлено"))]);
+    }
+    if (report.notFound.length) {
+      rows.push(["r-err", `Не найдено: ${report.notFound.length}`, report.notFound.map(raw => chip(raw))
+        .concat(note("оставлены в поле выше — исправьте и добавьте снова"))]);
+    }
+    if (report.badQty.length) {
+      rows.push(["r-err", `Неверное кол-во: ${report.badQty.length}`, report.badQty.map(e => chip(e.sku, `«${esc(e.token)}»`))
+        .concat(note("не добавлены: количество должно быть целым числом от 1; строки оставлены в поле выше"))]);
+    }
+    if (report.discontinued.length) {
+      rows.push(["r-err", `Снято с продажи: ${report.discontinued.length}`, report.discontinued.map(e => chip(e.sku,
+        e.replacedBy ? `→ замена ${esc(e.replacedBy)} <button type="button" class="btn btn-link" data-add-qty="${esc(e.replacedBy)}" data-qty="${e.qty}">добавить замену × ${e.qty}</button>` : ""))
+        .concat(note("не добавлены"))]);
+    }
+    if (report.noPrice.length) {
+      rows.push(["r-warn", `Без цены: ${report.noPrice.length}`, report.noPrice.map(e => chip(e.sku, `× ${e.qty}`))
+        .concat(note("добавлены, но КП не выпустится, пока в PIM нет цены"))]);
+    }
+    if (ignored.length) {
+      const shown = ignored.slice(0, 12).map(t => `<span class="chip">${esc(t)}</span>`);
+      if (ignored.length > 12) shown.push(`<span class="chip">и ещё ${ignored.length - 12}</span>`);
+      rows.push(["r-muted", `Пропущено: ${ignored.length}`, shown.concat(note("слова и числа, не похожие на артикул или количество"))]);
+    }
+    if (!rows.length) {
+      ui.bulkReport.innerHTML = '<div class="report"><div class="report-empty">Артикулы не распознаны.</div></div>';
+      return;
+    }
+    ui.bulkReport.innerHTML = `<div class="report">${rows.map(([cls, label, chips]) =>
+      `<div class="report-row ${cls}"><div class="label">${esc(label)}</div><div class="chips">${chips.join("")}</div></div>`).join("")}</div>`;
+  }
+
+  function renderQuoteMeta() {
+    const q = currentQuote();
+    const until = KPCore.addDays(q.date, KPCore.VALIDITY_DAYS);
+    const number = q.number
+      ? `<span class="num">${esc(q.number)}</span> <span class="pill ${q.draft ? "pill-muted" : "pill-ok"}">${q.draft ? "черновик" : "номер присвоен"}</span>`
+      : '<span>укажите № сделки</span>';
+    ui.quoteMeta.innerHTML = `
+      <span>№ ${number}</span>
+      <span>от <b>${formatDate(q.date)}</b></span>
+      <span>действует до <b>${formatDate(until)}</b> (${KPCore.VALIDITY_DAYS} календарных дней)</span>
+      ${q.previous ? `<span>ранее выпущен ${esc(q.previous)}; ${esc(q.reason)}, при выпуске будет новый номер</span>` : ""}`;
+  }
+
+  function renderAttachState() {
+    if (!state.attached) {
+      ui.attachState.innerHTML = '<span class="pill pill-muted">не прикреплено к сделке</span>';
+      return;
+    }
+    const time = new Date(state.attached.at);
+    if (!Number.isFinite(time.getTime())) {
+      state.attached = null;
+      renderAttachState();
+      return;
+    }
+    const stamp = `${formatDate(time)} ${String(time.getHours()).padStart(2, "0")}:${String(time.getMinutes()).padStart(2, "0")}`;
+    if (state.attached.signature === signature()) {
+      ui.attachState.innerHTML = `<span class="pill pill-ok">прикреплено к сделке ${esc(stamp)}</span>`;
+    } else {
+      ui.attachState.innerHTML = '<span class="pill pill-warn">изменено после прикрепления</span>';
+    }
+  }
+
+  function rowFlags(row) {
+    const flags = [];
+    if (row.missing) flags.push(["err", "не найдена в PIM"]);
+    else if (row.discontinued) flags.push(["err", "снята с продажи"]);
+    else if (!row.hasPrice) flags.push(["err", "нет цены"]);
+    if (row.qty < 1) flags.push(["err", "количество 0"]);
+    if (row.overLimit) flags.push(["warn", "нужно согласование РОП"]);
+    if (row.discount >= 100) flags.push(["warn", "скидка 100%"]);
+    return flags;
+  }
+
+  function renderCart() {
+    const { totals } = compute();
+    if (!totals.rows.length) {
+      ui.cart.innerHTML = '<div class="cart-empty"><b>В КП пока нет позиций</b>Добавьте товары из каталога или списком артикулов.</div>';
+      return;
+    }
+    const body = totals.rows.map((row, i) => {
+      const p = row.product;
+      const name = p ? p.name : "Позиция отсутствует в PIM";
+      const sub = p ? `${p.brand} · ${specLine(p, 2)}` : "";
+      const price = row.hasPrice
+        ? `<span class="price-locked">${formatMoney(row.unit)}<small>из PIM</small></span>`
+        : '<span class="price-req">нет цены</span>';
+      const replace = p && row.discontinued && p.replacedBy
+        ? `<button type="button" class="btn btn-link" data-replace="${esc(row.sku)}" data-with="${esc(p.replacedBy)}">заменить на ${esc(p.replacedBy)}</button>`
+        : "";
+      return `<tr data-sku="${esc(row.sku)}">
+        <td class="col-idx num-col">${i + 1}</td>
+        <td class="item-cell">
+          <div class="item-name">${esc(name)}</div>
+          <div class="item-sub"><span class="sku">${esc(row.sku)}</span>${sub ? ` · ${esc(sub)}` : ""}</div>
+          <div class="flags" data-role="flags"></div>
+          ${replace}
+        </td>
+        <td class="num-col price-cell"><span class="m-label">Цена</span>${price}</td>
+        <td class="qty-cell"><span class="m-label">Кол-во</span><div class="qty-wrap"><div class="qty">
+          <button type="button" data-step="-1" aria-label="Уменьшить">−</button>
+          <input type="number" min="0" max="${KPCore.MAX_QTY}" step="1" inputmode="numeric" data-field="qty" value="${row.qty}" aria-label="Количество">
+          <button type="button" data-step="1" aria-label="Увеличить">+</button>
+        </div><span class="qty-unit">${esc(KPCore.unitOf(p))}</span></div></td>
+        <td class="disc"><span class="m-label">Скидка, %</span><input type="text" inputmode="decimal" data-field="discount" value="${row.discount ? String(row.discount).replace(".", ",") : "0"}" aria-label="Скидка, %"></td>
+        <td class="num-col" data-role="sum"></td>
+        <td class="rm-cell"><button type="button" class="remove" data-remove="${esc(row.sku)}" title="Удалить позицию" aria-label="Удалить позицию">×</button></td>
+      </tr>`;
+    }).join("");
+    ui.cart.innerHTML = `<div class="cart-wrap"><table class="cart">
+      <thead><tr>
+        <th class="col-idx num-col">№</th><th>Товар</th><th class="num-col">Цена</th><th>Кол-во</th><th>Скидка, %</th><th class="num-col">Сумма</th><th></th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>`;
+    paintRows(totals);
+  }
+
+  function paintRows(totals) {
+    for (const row of totals.rows) {
+      const tr = ui.cart.querySelector(`tr[data-sku="${CSS.escape(row.sku)}"]`);
+      if (!tr) continue;
+      const flags = rowFlags(row);
+      tr.classList.toggle("row-err", flags.some(f => f[0] === "err"));
+      tr.classList.toggle("row-warn", !flags.some(f => f[0] === "err") && flags.some(f => f[0] === "warn"));
+      tr.querySelector('[data-role="flags"]').innerHTML = flags.map(([k, t]) => `<span class="flag flag-${k}">${esc(t)}</span>`).join("");
+      tr.querySelector('[data-role="sum"]').innerHTML = '<span class="m-label">Сумма</span>' + (row.hasPrice
+        ? `<div class="line-total">${formatMoney(row.total)}</div>${row.discountAmount ? `<div class="line-disc">скидка ${formatMoney(row.discountAmount)}</div>` : ""}`
+        : '<div class="line-total">—</div>');
+    }
+  }
+
+  function renderTotals(totals) {
+    if (!totals.rows.length) {
+      ui.totals.innerHTML = "";
+      return;
+    }
+    const unpriced = totals.rows.filter(r => !r.hasPrice).length;
+    ui.totals.innerHTML = `<div class="totals">
+      <div class="totals-row"><span class="muted">Позиций: ${totals.rows.length}, единиц: ${totals.units}</span><span></span></div>
+      <div class="totals-row"><span class="muted">Сумма без скидки</span><span>${formatMoney(totals.subtotal)}</span></div>
+      <div class="totals-row"><span class="muted">Скидка</span><span>${totals.discount ? formatMoney(-totals.discount) : formatMoney(0)}</span></div>
+      <div class="totals-row grand${unpriced ? " partial" : ""}"><span>${unpriced ? "Итого, неполное" : "Итого"}</span><span>${formatMoney(totals.total)}</span></div>
+      <div class="totals-row vat"><span>в т.ч. НДС ${KPCore.VAT_RATE}%</span><span>${formatMoney(totals.vat)}</span></div>
+      ${unpriced ? `<div class="totals-note">не учтены позиции без цены: ${unpriced}; итог изменится, когда цена появится в PIM</div>` : ""}
+    </div>`;
+  }
+
+  function renderChecks(checks) {
+    const items = [];
+    const target = c => (c.sku ? ` data-sku="${esc(c.sku)}" tabindex="0" role="button" title="Показать позицию в КП"` : "");
+    for (const c of checks.blocking) {
+      items.push(`<li class="check c-err"${target(c)}><span class="ic">✕</span><span>${c.sku ? `<span class="sku">${esc(c.sku)}</span>: ` : ""}${esc(c.text)}</span></li>`);
+    }
+    for (const c of checks.warnings) {
+      items.push(`<li class="check c-warn"${target(c)}><span class="ic">!</span><span>${c.sku ? `<span class="sku">${esc(c.sku)}</span>: ` : ""}${esc(c.text)}</span></li>`);
+    }
+    if (!checks.blocking.length && !checks.warnings.length) {
+      items.push('<li class="check c-ok"><span class="ic">✓</span><span>Все проверки пройдены — КП можно выпускать</span></li>');
+    } else if (!checks.blocking.length) {
+      items.unshift('<li class="check c-ok"><span class="ic">✓</span><span>Блокирующих ошибок нет — КП можно выпустить, предупреждения ниже</span></li>');
+    }
+    ui.checks.innerHTML = items.join("");
+    ui.checksSummary.innerHTML = checks.blocking.length
+      ? `<span class="pill pill-err">ошибок: ${checks.blocking.length}</span>`
+      : checks.warnings.length
+        ? `<span class="pill pill-warn">предупреждений: ${checks.warnings.length}</span>`
+        : '<span class="pill pill-ok">готово</span>';
+    ui.btnPreview.disabled = !checks.ready;
+    ui.btnAttach.disabled = !checks.ready;
+    ui.actionsHint.textContent = checks.ready ? "" : "Исправьте ошибки, чтобы выпустить КП";
+  }
+
+  function renderLog() {
+    if (!journal.length) {
+      ui.log.innerHTML = '<li class="log-empty">Пока пусто.</li>';
+      return;
+    }
+    ui.log.innerHTML = journal.map(entry => {
+      const d = new Date(entry.at);
+      const stamp = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      return `<li><time>${stamp}</time><span>${esc(entry.text)}</span></li>`;
+    }).join("");
+  }
+
+  function renderClientFields() {
+    ui.deal.value = state.deal;
+    ui.client.value = state.client.name;
+    ui.inn.value = state.client.inn;
+    ui.contact.value = state.client.contact;
+    markRequired();
+  }
+
+  function markRequired() {
+    ui.deal.classList.toggle("invalid", !state.deal.trim());
+    ui.client.classList.toggle("invalid", !state.client.name.trim());
+    const inn = state.client.inn.trim();
+    ui.inn.classList.toggle("soft-invalid", Boolean(inn) && inn.length !== 10 && inn.length !== 12);
+  }
+
+  function refresh({ cart = false, catalog = false } = {}) {
+    const { totals, checks } = compute();
+    if (cart) renderCart();
+    else paintRows(totals);
+    renderTotals(totals);
+    renderChecks(checks);
+    renderQuoteMeta();
+    renderAttachState();
+    if (catalog) renderCatalog();
+    persist();
+  }
+
+  function addProduct(sku, qty = 1) {
+    const product = pimAdapter.getBySku(sku);
+    if (!product) {
+      toast(`Артикул ${sku} не найден в PIM`, "warn");
+      return false;
+    }
+    if (product.status !== "active") {
+      toast(`${product.sku} снят с продажи${product.replacedBy ? ` — замена ${product.replacedBy}` : ""}`, "warn");
+      return false;
+    }
+    const result = KPCore.addLine(state.lines, product.sku, qty);
+    state.lines = result.lines;
+    refresh({ cart: true, catalog: true });
+    flashRow(product.sku);
+    if (product.price == null) toast(`${product.sku} добавлен, но цены в PIM нет — КП не выпустится, пока цена не появится`, "warn");
+    return true;
+  }
+
+  function flashRow(sku) {
+    const tr = ui.cart.querySelector(`tr[data-sku="${CSS.escape(sku)}"]`);
+    if (!tr) return;
+    tr.classList.remove("flash");
+    void tr.offsetWidth;
+    tr.classList.add("flash");
+    tr.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function removeLine(sku) {
+    state.lines = state.lines.filter(l => l.sku !== sku);
+    refresh({ cart: true, catalog: true });
+  }
+
+  function replaceLine(sku, withSku) {
+    const old = state.lines.find(l => l.sku === sku);
+    const product = pimAdapter.getBySku(withSku);
+    if (!old || !product || product.status !== "active") {
+      toast(`Замена ${withSku} недоступна`, "warn");
+      return;
+    }
+    const result = KPCore.replaceLine(state.lines, sku, product.sku);
+    if (!result.replaced) return;
+    state.lines = result.lines;
+    const kept = !result.merged && old.discount ? `, скидка ${formatPercent(old.discount)} сохранена` : "";
+    addLog(`Позиция ${sku} заменена на ${product.sku}${result.merged ? " (количество прибавлено к уже имеющейся строке)" : kept}`);
+    refresh({ cart: true, catalog: true });
+    flashRow(product.sku);
+  }
+
+  function bulkAdd() {
+    const { items, ignored } = KPCore.parseSkuInput(ui.bulk.value);
+    if (!items.length) {
+      renderBulkReport(null, ignored.length
+        ? `Артикулы не найдены в тексте. Пропущено: ${ignored.slice(0, 8).join(", ")}${ignored.length > 8 ? "…" : ""}`
+        : "Вставьте хотя бы один артикул.");
+      return;
+    }
+    const { lines, report } = KPCore.applySkuList(state.lines, items, pimAdapter.getBySku);
+    state.lines = lines;
+    ui.bulk.value = report.notFound.concat(report.badQty.map(e => `${e.raw} ${e.token}`)).join("\n");
+    renderBulkReport(report, null, ignored);
+    refresh({ cart: true, catalog: true });
+    const parts = [
+      report.added.length && `добавлено ${report.added.length}`,
+      report.increased.length && `увеличено ${report.increased.length}`,
+      report.noPrice.length && `без цены ${report.noPrice.length}`,
+      report.discontinued.length && `снято с продажи ${report.discontinued.length}`,
+      report.notFound.length && `не найдено ${report.notFound.length}`,
+      report.badQty.length && `неверное количество ${report.badQty.length}`
+    ].filter(Boolean);
+    addLog(`Список артикулов: ${parts.join(", ")}`);
+  }
+
+  function renderDoc() {
+    const { totals, checks } = compute();
+    const q = currentQuote();
+    const until = KPCore.addDays(q.date, KPCore.VALIDITY_DAYS);
+    const withDiscount = totals.rows.some(r => r.discount > 0);
+    const rows = totals.rows.map((r, i) => `<tr>
+      <td class="c">${i + 1}</td>
+      <td class="sku">${esc(r.sku)}</td>
+      <td>${esc(r.product.name)}, ${esc(r.product.brand)}<div class="doc-specs">${esc(specLine(r.product))}</div></td>
+      <td class="c">${r.qty}</td>
+      <td class="c">${esc(KPCore.unitOf(r.product))}</td>
+      <td class="r">${formatMoney(r.unit)}</td>
+      ${withDiscount ? `<td class="r">${r.discount ? formatPercent(r.discount) : "—"}</td>` : ""}
+      <td class="r">${formatMoney(r.total)}</td>
+    </tr>`).join("");
+    const client = state.client;
+    ui.doc.innerHTML = `
+      <header class="doc-head">
+        <div>
+          <div class="doc-company-name">АО «Индустриальные системы»</div>
+          <div class="doc-req">ИНН 0000000000 · КПП 000000000 · г. Москва, ул. Условная, д. 1<br>+7 (000) 000-00-00 · sales@example.ru</div>
+        </div>
+        <div class="doc-stamp">условные реквизиты</div>
+      </header>
+      <h1 class="doc-title">Коммерческое предложение № ${esc(q.number)}</h1>
+      <div class="doc-subtitle">от ${formatDate(q.date)} · сделка № ${esc(state.deal.trim())}</div>
+      <table class="doc-parties">
+        <tr><td>Кому</td><td><b>${esc(client.name.trim())}</b>${client.inn.trim() ? `, ИНН ${esc(client.inn.trim())}` : ""}</td></tr>
+        ${client.contact.trim() ? `<tr><td>Контактное лицо</td><td>${esc(client.contact.trim())}</td></tr>` : ""}
+        <tr><td>Действует до</td><td>${formatDate(until)} включительно</td></tr>
+      </table>
+      <p class="doc-intro">По итогам обсуждения предлагаем поставку оборудования для автосервиса на следующих условиях.</p>
+      <table class="doc-table">
+        <thead><tr>
+          <th class="c">№</th><th>Артикул</th><th>Наименование</th><th class="c">Кол-во</th><th class="c">Ед.</th><th class="r">Цена</th>${withDiscount ? '<th class="r">Скидка</th>' : ""}<th class="r">Сумма</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <table class="doc-totals">
+        ${totals.discount ? `<tr><td>Сумма без скидки</td><td>${formatMoney(totals.subtotal)}</td></tr><tr><td>Скидка</td><td>${formatMoney(-totals.discount)}</td></tr>` : ""}
+        <tr class="grand"><td>Итого</td><td>${formatMoney(totals.total)}</td></tr>
+        <tr class="vat"><td>в т.ч. НДС ${KPCore.VAT_RATE}%</td><td>${formatMoney(totals.vat)}</td></tr>
+      </table>
+      <section class="doc-terms">
+        <h3>Условия</h3>
+        <ul>
+          <li>Цены указаны в рублях и включают НДС ${KPCore.VAT_RATE}%.</li>
+          <li>Доставка и монтаж рассчитываются отдельно.</li>
+          <li>Предложение действительно до ${formatDate(until)} включительно (${KPCore.VALIDITY_DAYS} календарных дней).</li>
+          <li>Сроки поставки и порядок оплаты согласовываются в договоре.</li>
+        </ul>
+      </section>
+      <div class="doc-sign">
+        <span>Менеджер отдела продаж</span>
+        <span>____________________ / ____________________</span>
+      </div>
+      <div class="doc-foot">Документ сформирован в прототипе «Конструктор КП». Товары, цены и реквизиты условные.</div>`;
+    ui.pageMeta.textContent = `@media print { @page { @bottom-left { content: "${cssString(q.number)}"; font: 8pt -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #777; } } }`;
+    return { totals, checks, q };
+  }
+
+  function cssString(value) {
+    return String(value == null ? "" : value).replace(/[\\"]/g, "\\$&").replace(/[\r\n]+/g, " ");
+  }
+
+  let lastFocus = null;
+  function openPreview() {
+    const { checks } = compute();
+    if (!checks.ready) return;
+    issueQuote();
+    const { q } = renderDoc();
+    renderQuoteMeta();
+    lastFocus = document.activeElement;
+    ui.preview.hidden = false;
+    document.body.classList.add("previewing");
+    $("btn-close-preview").focus();
+    addLog(`Открыт предпросмотр ${q.number}`);
+  }
+
+  function closePreview() {
+    ui.preview.hidden = true;
+    document.body.classList.remove("previewing");
+    ui.pageMeta.textContent = "";
+    restoreTitle();
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+  }
+
+  let restoreTitle = () => {};
+  function printDoc() {
+    const q = currentQuote();
+    restoreTitle();
+    document.title = q.number || BASE_TITLE;
+    const media = typeof window.matchMedia === "function" ? window.matchMedia("print") : null;
+    const onMedia = e => { if (!e.matches) restoreTitle(); };
+    restoreTitle = () => {
+      document.title = BASE_TITLE;
+      window.removeEventListener("afterprint", restoreTitle);
+      if (media) {
+        if (media.removeEventListener) media.removeEventListener("change", onMedia);
+        else if (media.removeListener) media.removeListener(onMedia);
+      }
+      restoreTitle = () => {};
+    };
+    window.addEventListener("afterprint", restoreTitle);
+    if (media) {
+      if (media.addEventListener) media.addEventListener("change", onMedia);
+      else if (media.addListener) media.addListener(onMedia);
+    }
+    addLog(`Открыто окно печати: ${q.number}`);
+    window.print();
+  }
+
+  function attachToDeal() {
+    const { totals, checks } = compute();
+    if (!checks.ready) return;
+    const q = issueQuote();
+    const deal = state.deal.trim();
+    state.attached = { at: Date.now(), number: q.number, total: totals.total, signature: signature() };
+    persist();
+    const sum = formatMoney(totals.total);
+    const approval = checks.warnings.some(w => w.code === "discount-limit") ? " · есть скидки выше лимита, нужно согласование РОП" : "";
+    addLog(`${q.number} и сумма ${sum} записаны в сделку № ${deal}${approval}`);
+    toast(`${q.number} и сумма ${sum} записаны в сделку № ${deal} (в прототипе — имитация, в v1 — REST API Битрикс24)`);
+    renderQuoteMeta();
+    renderAttachState();
+  }
+
+  let confirmResolve = null;
+  let confirmReturnFocus = null;
+  function askConfirm(text, okLabel) {
+    if (confirmResolve) closeConfirm(false);
+    return new Promise(resolve => {
+      confirmResolve = resolve;
+      confirmReturnFocus = document.activeElement;
+      ui.confirmText.textContent = text;
+      ui.confirmOk.textContent = okLabel;
+      ui.confirm.hidden = false;
+      ui.confirmOk.focus();
+    });
+  }
+
+  function closeConfirm(result) {
+    if (!confirmResolve) return;
+    const resolve = confirmResolve;
+    confirmResolve = null;
+    ui.confirm.hidden = true;
+    if (confirmReturnFocus && typeof confirmReturnFocus.focus === "function") confirmReturnFocus.focus();
+    resolve(result);
+  }
+
+  async function newQuote() {
+    const hasWork = state.lines.length || state.issued;
+    if (hasWork && !(await askConfirm("Начать новое КП? Позиции и номер текущего КП будут сброшены. Сделка и клиент останутся — в v1 они приходят из карточки сделки.", "Начать новое КП"))) return;
+    state.lines = [];
+    state.issued = null;
+    state.attached = null;
+    ui.bulkReport.innerHTML = "";
+    refresh({ cart: true, catalog: true });
+    addLog("Начато новое КП");
+    toast("Новое КП: позиции очищены, данные сделки сохранены");
+  }
+
+  const EXAMPLE = { deal: "18452", client: { name: "ООО «Автосервис на Северной»", inn: "7700000000", contact: "Сергей Иванов, технический директор" } };
+
+  function fillExampleClient() {
+    state.deal = EXAMPLE.deal;
+    state.client = { ...EXAMPLE.client };
+    renderClientFields();
+    refresh();
+  }
+
+  async function onExampleClick() {
+    const c = state.client;
+    const filled = state.deal.trim() || c.name.trim() || c.inn.trim() || c.contact.trim();
+    const same = state.deal === EXAMPLE.deal && ["name", "inn", "contact"].every(k => c[k] === EXAMPLE.client[k]);
+    if (filled && !same && !(await askConfirm("Заменить введённые сделку и клиента данными примера?", "Заменить"))) return;
+    fillExampleClient();
+    addLog("Подставлены данные сделки-примера");
+  }
+
+  function keepDigits(input, maxLength) {
+    const value = input.value;
+    const digits = value.replace(/\D+/g, "").slice(0, maxLength);
+    if (digits === value) return digits;
+    const caret = typeof input.selectionStart === "number" ? input.selectionStart : value.length;
+    const pos = Math.min(value.slice(0, caret).replace(/\D+/g, "").length, digits.length);
+    input.value = digits;
+    try { input.setSelectionRange(pos, pos); } catch (e) {}
+    return digits;
+  }
+
+  function onClientInput() {
+    state.deal = keepDigits(ui.deal, 20);
+    state.client.name = ui.client.value;
+    state.client.inn = keepDigits(ui.inn, 12);
+    state.client.contact = ui.contact.value;
+    markRequired();
+    refresh();
+  }
+
+  function onCartInput(e) {
+    const input = e.target.closest("input[data-field]");
+    if (!input) return;
+    const sku = input.closest("tr").dataset.sku;
+    const line = state.lines.find(l => l.sku === sku);
+    if (!line) return;
+    if (input.dataset.field === "qty") line.qty = KPCore.parseQty(input.value);
+    else line.discount = KPCore.parseDiscount(input.value);
+    refresh({ catalog: input.dataset.field === "qty" });
+  }
+
+  function onCartChange(e) {
+    const input = e.target.closest("input[data-field]");
+    if (!input) return;
+    const line = state.lines.find(l => l.sku === input.closest("tr").dataset.sku);
+    if (!line) return;
+    input.value = input.dataset.field === "qty" ? String(line.qty) : String(line.discount).replace(".", ",");
+  }
+
+  function onCartClick(e) {
+    const step = e.target.closest("button[data-step]");
+    if (step) {
+      const tr = step.closest("tr");
+      const line = state.lines.find(l => l.sku === tr.dataset.sku);
+      if (!line) return;
+      line.qty = Math.min(Math.max(line.qty + Number(step.dataset.step), 1), KPCore.MAX_QTY);
+      tr.querySelector('input[data-field="qty"]').value = String(line.qty);
+      refresh({ catalog: true });
+      return;
+    }
+    const remove = e.target.closest("button[data-remove]");
+    if (remove) {
+      removeLine(remove.dataset.remove);
+      return;
+    }
+    const replace = e.target.closest("button[data-replace]");
+    if (replace) replaceLine(replace.dataset.replace, replace.dataset.with);
+  }
+
+  function onCatalogClick(e) {
+    const add = e.target.closest("button[data-add]");
+    if (add) {
+      addProduct(add.dataset.add);
+      return;
+    }
+    const find = e.target.closest("button[data-find]");
+    if (find) {
+      ui.q.value = find.dataset.find;
+      ui.cat.value = "";
+      renderCatalog();
+      ui.q.focus();
+    }
+  }
+
+  function onChecksClick(e) {
+    const item = e.target.closest("li[data-sku]");
+    if (item) flashRow(item.dataset.sku);
+  }
+
+  function onChecksKey(e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const item = e.target.closest("li[data-sku]");
+    if (!item) return;
+    e.preventDefault();
+    flashRow(item.dataset.sku);
+    const tr = ui.cart.querySelector(`tr[data-sku="${CSS.escape(item.dataset.sku)}"]`);
+    const field = tr && tr.querySelector('input[data-field="qty"]');
+    if (field) field.focus({ preventScroll: true });
+  }
+
+  function trapFocus(e, box) {
+    const items = [...box.querySelectorAll("button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex='-1'])")];
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const inside = box.contains(document.activeElement);
+    if (e.shiftKey && (!inside || document.activeElement === first)) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && (!inside || document.activeElement === last)) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  function onDocumentKey(e) {
+    const dialog = !ui.confirm.hidden ? ui.confirm : !ui.preview.hidden ? ui.preview : null;
+    if (!dialog) return;
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (dialog === ui.confirm) closeConfirm(false);
+      else closePreview();
+    } else if (e.key === "Tab") {
+      trapFocus(e, dialog);
+    }
+  }
+
+  function demoFill() {
+    if (!state.deal.trim() || !state.client.name.trim()) fillExampleClient();
+    state.lines = [
+      { sku: "IS-LFT-2040", qty: 2, discount: 3 },
+      { sku: "IS-TYR-0001", qty: 1, discount: 0 },
+      { sku: "IS-BAL-1100", qty: 1, discount: 0 },
+      { sku: "IS-CMP-0270", qty: 1, discount: 7 },
+      { sku: "IS-ACC-0010", qty: 4, discount: 0 }
+    ];
+    state.issued = null;
+    state.attached = null;
+    refresh({ cart: true, catalog: true });
+    addLog("Собран пример КП (5 позиций, одна скидка выше лимита)");
+  }
+
+  function demoDiscontinue() {
+    const target = state.lines.map(l => pimAdapter.getBySku(l.sku)).find(p => p && p.status === "active");
+    if (!target) {
+      toast("Сначала добавьте в КП хотя бы одну позицию в продаже", "warn");
+      return;
+    }
+    const replacement = pimAdapter.search({ category: target.category })
+      .find(p => p.sku !== target.sku && p.status === "active" && p.price != null);
+    pimMock.override(target.sku, { status: "discontinued", replacedBy: replacement ? replacement.sku : null });
+    refresh({ cart: true, catalog: true });
+    addLog(`Мок PIM: ${target.sku} снят с продажи`);
+    toast(`В моке PIM ${target.sku} снят с продажи — проверка готовности это поймала`, "warn");
+  }
+
+  function demoReset() {
+    if (!pimMock.hasOverrides()) {
+      toast("Мок PIM и так в исходном состоянии");
+      return;
+    }
+    pimMock.reset();
+    refresh({ cart: true, catalog: true });
+    addLog("Мок PIM возвращён в исходное состояние");
+  }
+
+  function bind() {
+    [ui.deal, ui.client, ui.inn, ui.contact].forEach(el => el.addEventListener("input", onClientInput));
+    $("btn-example").addEventListener("click", onExampleClick);
+    ui.q.addEventListener("input", renderCatalog);
+    ui.q.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      const product = pimAdapter.getBySku(ui.q.value);
+      if (product) {
+        addProduct(product.sku);
+        ui.q.select();
+      }
+    });
+    ui.cat.addEventListener("change", renderCatalog);
+    ui.catalog.addEventListener("click", onCatalogClick);
+    $("btn-bulk").addEventListener("click", bulkAdd);
+    ui.bulk.addEventListener("keydown", e => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        bulkAdd();
+      }
+    });
+    $("btn-bulk-example").addEventListener("click", () => {
+      ui.bulk.value = "is-lft-2040, IS-TYR-0001;  is-bal-1100 x2\nIS-ACC-0020 3 шт\nIS-TYR-0056\nIS-BAL-1080\nIS-XXX-0000";
+      ui.bulk.focus();
+    });
+    ui.bulkReport.addEventListener("click", e => {
+      const btn = e.target.closest("button[data-add-qty]");
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      if (addProduct(btn.dataset.addQty, Number(btn.dataset.qty) || 1)) {
+        const done = document.createElement("span");
+        done.className = "report-done";
+        done.textContent = `добавлено × ${Number(btn.dataset.qty) || 1}`;
+        btn.replaceWith(done);
+      } else {
+        btn.disabled = false;
+      }
+    });
+    ui.cart.addEventListener("input", onCartInput);
+    ui.cart.addEventListener("change", onCartChange);
+    ui.cart.addEventListener("click", onCartClick);
+    ui.checks.addEventListener("click", onChecksClick);
+    ui.checks.addEventListener("keydown", onChecksKey);
+    ui.btnPreview.addEventListener("click", openPreview);
+    ui.btnAttach.addEventListener("click", attachToDeal);
+    $("btn-print").addEventListener("click", printDoc);
+    $("btn-close-preview").addEventListener("click", closePreview);
+    ui.preview.addEventListener("click", e => { if (e.target === ui.preview || e.target.classList.contains("doc-wrap")) closePreview(); });
+    ui.confirmOk.addEventListener("click", () => closeConfirm(true));
+    ui.confirmCancel.addEventListener("click", () => closeConfirm(false));
+    ui.confirm.addEventListener("click", e => { if (e.target === ui.confirm) closeConfirm(false); });
+    document.addEventListener("keydown", onDocumentKey);
+    $("btn-new").addEventListener("click", newQuote);
+    $("demo-fill").addEventListener("click", demoFill);
+    $("demo-discontinue").addEventListener("click", demoDiscontinue);
+    $("demo-reset").addEventListener("click", demoReset);
+  }
+
+  renderCategories();
+  renderClientFields();
+  renderLog();
+  bind();
+  refresh({ cart: true, catalog: true });
+})();
+</script>
+</body>
+</html>
